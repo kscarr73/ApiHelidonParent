@@ -4,7 +4,6 @@ import com.progbits.api.exception.ApiException;
 import com.progbits.api.model.ApiObject;
 import com.progbits.api.writer.YamlObjectWriter;
 import io.helidon.common.GenericType;
-import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityWriter;

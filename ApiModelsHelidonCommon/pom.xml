@@ -7,11 +7,18 @@
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <properties>
+        <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
     </properties>
+
+    <repositories>
+        <repository>
+            <id>ProgbitsRepo</id>
+            <url>https://archiva.progbits.com/coffer/repository/internal/</url>
+        </repository>
+    </repositories>
 
     <distributionManagement>
         <repository>
@@ -20,7 +27,7 @@
             <url>https://archiva.progbits.com/coffer/repository/internal/</url>
         </repository>
     </distributionManagement>
-	
+    
     <dependencies>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
