@@ -10,6 +10,10 @@ import io.helidon.config.Config;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
+import io.helidon.http.encoding.ContentEncodingContextConfig;
+import io.helidon.http.encoding.deflate.DeflateEncoding;
+import io.helidon.http.encoding.gzip.GzipEncoding;
+import io.helidon.http.encoding.gzip.GzipEncodingProvider;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.WebClient;
@@ -55,7 +59,11 @@ public class WebClientUtil {
 
         var webClient = WebClient.builder()
             .config(config.get("client"))
-            .addHeader(HeaderNames.ACCEPT_ENCODING, "gzip, deflate, br")
+            .addHeader(HeaderNames.ACCEPT_ENCODING, "gzip, deflates")
+            .contentEncoding(ContentEncodingContextConfig.builder()
+                .addContentEncoding(GzipEncoding.create())
+                .addContentEncoding(DeflateEncoding.create())
+                .build())
             .addMediaSupport(new ApiModelsJsonMediaSupport())
             .addMediaSupport(new ApiModelsYamlMediaSupport());
         
