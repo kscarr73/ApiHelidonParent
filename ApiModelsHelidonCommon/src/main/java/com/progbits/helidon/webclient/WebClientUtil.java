@@ -199,6 +199,7 @@ public class WebClientUtil {
                     if (!"formdata".equals(entry)) {
                         if (!isFirst) {
                             sbForm.append("&");
+                        } else {
                             isFirst = false;
                         }
 
