@@ -13,7 +13,6 @@ import io.helidon.http.Status;
 import io.helidon.http.encoding.ContentEncodingContextConfig;
 import io.helidon.http.encoding.deflate.DeflateEncoding;
 import io.helidon.http.encoding.gzip.GzipEncoding;
-import io.helidon.http.encoding.gzip.GzipEncodingProvider;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.WebClient;
@@ -30,94 +29,112 @@ public class WebClientUtil {
 
     /**
      * Return a WebClient with ApiObject media Support.
-     * 
+     *
      * @param baseUri Optional sets a Base URI for the WebClient
-     * 
-     * @return The Created WebClient 
+     *
+     * @return The Created WebClient
      */
     public static WebClient getClient(String baseUri) {
-        return getClient(baseUri, false);
+        return getClient(baseUri, false, false);
     }
 
     /**
      * Return a WebClient with ApiObject media support
-     * 
+     *
      * Prometheus metrics includes:
      * <ul>
      * <li>webclient_totals: Counter - path is included in totals</li>
-     * <li>webclient_status: Counter - Count of Each Status by Path and Status</li>
+     * <li>webclient_status: Counter - Count of Each Status by Path and
+     * Status</li>
      * <li>webclient_duration_seconds: Histogram - Duration by Path</li>
      * </ul>
      *
      * @param baseUri Optional sets a Base URI for the WebClient
-     * @param includePrometheus If TRUE, will return a WebClient with Prometheus metrics
-     * 
+     * @param includePrometheus If TRUE, will return a WebClient with Prometheus
+     * metrics
+     *
      * @return The Created WebClient
      */
-    public static WebClient getClient(String baseUri, boolean includePrometheus) {
+    public static WebClient getClient(String baseUri, boolean includePrometheus, boolean enableCompression) {
         Config config = Config.create();
 
         var webClient = WebClient.builder()
             .config(config.get("client"))
-            .addHeader(HeaderNames.ACCEPT_ENCODING, "gzip, deflates")
-            .contentEncoding(ContentEncodingContextConfig.builder()
-                .addContentEncoding(GzipEncoding.create())
-                .addContentEncoding(DeflateEncoding.create())
-                .build())
             .addMediaSupport(new ApiModelsJsonMediaSupport())
             .addMediaSupport(new ApiModelsYamlMediaSupport());
-        
+
         if (baseUri != null) {
             webClient.baseUri(baseUri);
         }
-            
+
         if (includePrometheus) {
             webClient.addService(new WebClientMetrics());
         }
 
+        if (enableCompression) {
+            webClient.addHeader(HeaderNames.ACCEPT_ENCODING, "gzip, deflate");
+            webClient.contentEncoding(
+                ContentEncodingContextConfig.builder()
+                    .addContentEncoding(GzipEncoding.create())
+                    .addContentEncoding(DeflateEncoding.create())
+                    .build()
+            );
+        }
+        
         return webClient.build();
     }
 
     /**
      * Make an HTTP Call.
-     * 
+     *
      * Defaults to Content-Type application/json
-     * 
+     *
      * @param client WebClient to use for the Call
-     * @param url Full URL to ignore baseUri. A Fragment is considered a url that does not start with http:
-     * @param method The Method for the Call.  GET, POST, PUT, etc...
-     * @param authorization OPTIONAL The String used for the Authorization header.
-     * @param errorField OPTIONAL The errorField to pull from a FAILURE.  Example: message, root[0].message for list
-     * @param props OPTIONAL header to add Headers to the call.  `params` to add Query Params to the call
-     * @param payload OPTIONAL Payload to send.  If `formdata: true` is set, then the request is sent application/x-www-form-urlencoded
-     * 
+     * @param url Full URL to ignore baseUri. A Fragment is considered a url
+     * that does not start with http:
+     * @param method The Method for the Call. GET, POST, PUT, etc...
+     * @param authorization OPTIONAL The String used for the Authorization
+     * header.
+     * @param errorField OPTIONAL The errorField to pull from a FAILURE.
+     * Example: message, root[0].message for list
+     * @param props OPTIONAL header to add Headers to the call. `params` to add
+     * Query Params to the call
+     * @param payload OPTIONAL Payload to send. If `formdata: true` is set, then
+     * the request is sent application/x-www-form-urlencoded
+     *
      * @return The Response ApiObject
-     * 
+     *
      * @throws ApiException Thrown if Call is not Successful (2xx)
      */
     public static ApiObject makeHttpCall(WebClient client, String url, String method, String authorization, String errorField, ApiObject props, ApiObject payload) throws ApiException {
         ClientResponseTyped<ApiObject> resp = makeHttpCallWithResp(client, url, method, authorization, props, payload);
-        
+
         if (resp.status().family() == Status.Family.SUCCESSFUL) {
             return resp.entity();
         } else {
             throw new ApiException(resp.status().code(), resp.entity().getString(errorField));
         }
     }
-    
+
     /**
      * Make an HTTP Call.
-     * 
+     *
      * Defaults to Content-Type application/json
-     * 
+     *
      * @param client WebClient to use for the Call
-     * @param url Full URL to ignore baseUri. A Fragment is considered a url that does not start with http:
-     * @param method The Method for the Call.  GET, POST, PUT, etc...
-     * @param authorization OPTIONAL The String used for the Authorization header.
-     * @param props header to add Headers to the call.  `params` to add Query Params to the call
-     * @param payload Payload to send.  If `formdata: true` is set, then the request is sent application/x-www-form-urlencoded, otherwise sent as ApiObject with Content-Type JSON or YAML.
-     * 
-     * @return ClientResponseTyped The entity will be the ApiObject returned.  You have full access to the Response object
+     * @param url Full URL to ignore baseUri. A Fragment is considered a url
+     * that does not start with http:
+     * @param method The Method for the Call. GET, POST, PUT, etc...
+     * @param authorization OPTIONAL The String used for the Authorization
+     * header.
+     * @param props header to add Headers to the call. `params` to add Query
+     * Params to the call
+     * @param payload Payload to send. If `formdata: true` is set, then the
+     * request is sent application/x-www-form-urlencoded, otherwise sent as
+     * ApiObject with Content-Type JSON or YAML.
+     *
+     * @return ClientResponseTyped The entity will be the ApiObject returned.
+     * You have full access to the Response object
      */
     public static ClientResponseTyped<ApiObject> makeHttpCallWithResp(WebClient client, String url, String method, String authorization, ApiObject props, ApiObject payload) {
         HttpClientRequest req = client.method(Method.create(method));
@@ -131,7 +148,7 @@ public class WebClientUtil {
         if (authorization != null) {
             req.header(HeaderNames.AUTHORIZATION, authorization);
         }
-        
+
         if (props != null) {
             if (props.isSet("headers")) {
                 for (var hdr : props.getObject("headers").keySet()) {
@@ -153,7 +170,6 @@ public class WebClientUtil {
                     } else {
                         req.queryParam(prop, props.getObject("params").getString(prop));
                     }
-
                 }
             }
 
@@ -165,17 +181,17 @@ public class WebClientUtil {
         }
 
         String flowId = MDC.get("flowid");
-            
+
         if (flowId != null) {
             req.header(XFlowIdFilter.XFLOWID, flowId);
         }
-        
+
         ClientResponseTyped<ApiObject> resp;
 
         if (payload != null) {
             if (payload.containsKey("formdata")) {
                 req.contentType(MediaTypes.APPLICATION_FORM_URLENCODED);
-                
+
                 StringBuilder sbForm = new StringBuilder();
                 boolean isFirst = true;
 
