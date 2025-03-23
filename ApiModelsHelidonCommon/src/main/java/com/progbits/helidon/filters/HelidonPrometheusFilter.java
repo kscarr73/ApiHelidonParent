@@ -13,12 +13,22 @@ public class HelidonPrometheusFilter implements Filter{
 
     private Histogram histogram = null;
     private Counter statusCounter = null;
-    private String metricName = "http_status";
+    private String metricName = "http_requests";
 
     public HelidonPrometheusFilter() {
         configure();
     }
 
+    /**
+     * Create a Prometheus Filter for Helidon.
+     * 
+     * <ul>
+     * <li>{{metricName}}: Histogram - Duration for calls by Path</li>
+     * <li>{{metricName}}_status_total: Counter - Count by path, method, and status</li>
+     * </ul>
+     * 
+     * @param metricName The prefix for the metrics
+     */
     public HelidonPrometheusFilter(String metricName) {
         this.metricName = metricName;
         configure();
@@ -30,6 +40,7 @@ public class HelidonPrometheusFilter implements Filter{
         histogram = Histogram.builder()
             .help("The time taken fulfilling the request")
             .name(metricName)
+            .labelNames("path")
             .register();
 
         statusCounter = Counter.builder()
@@ -38,9 +49,11 @@ public class HelidonPrometheusFilter implements Filter{
             .labelNames("path", "method", "status")
             .register();
     }
+    
     @Override
     public void filter(FilterChain chain, RoutingRequest req, RoutingResponse res) {
-        Timer tmr = histogram.startTimer();
+        Timer tmr = histogram.labelValues(req.requestedUri().path().toString()).startTimer();
+        
         try {
             chain.proceed();
         } finally {

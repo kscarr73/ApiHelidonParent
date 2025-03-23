@@ -4,10 +4,10 @@
 
     <groupId>com.progbits.api.helidon.filters</groupId>
     <artifactId>ApiModelsHelidonCommon</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <packaging>jar</packaging>
 
-        <properties>
+    <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
@@ -27,7 +27,7 @@
             <url>https://archiva.progbits.com/coffer/repository/internal/</url>
         </repository>
     </distributionManagement>
-    
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
