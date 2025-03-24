@@ -4,7 +4,7 @@
 
     <groupId>com.progbits.api.helidon.filters</groupId>
     <artifactId>ApiModelsHelidonCommon</artifactId>
-    <version>1.0.4</version>
+    <version>1.0.5</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -62,12 +62,12 @@
         <dependency>
             <groupId>com.progbits.api.helidon.media</groupId>
             <artifactId>ApiModelsHelidonMediaJson</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.progbits.api.helidon.media</groupId>
             <artifactId>ApiModelsHelidonMediaYaml</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>io.prometheus</groupId>
@@ -107,6 +107,21 @@
                         </goals>
                     </execution>
                     
+                </executions>
+            </plugin>
+            
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>
