@@ -4,7 +4,7 @@
 
     <groupId>com.progbits.api.helidon.filters</groupId>
     <artifactId>ApiModelsHelidonCommon</artifactId>
-    <version>1.0.6</version>
+    <version>1.0.7</version>
     <packaging>jar</packaging>
 
     <properties>

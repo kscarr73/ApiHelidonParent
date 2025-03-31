@@ -14,29 +14,12 @@ import io.prometheus.metrics.model.snapshots.Unit;
  */
 public class WebClientMetrics implements WebClientService {
 
-    private final Counter total;
-    private final Counter statuses;
-    private final Histogram buckets;
+    private static final Counter total;
+    private static final Counter statuses;
+    private static final Histogram buckets;
     
     public WebClientMetrics() {
-        total = Counter.builder()
-            .name("webclient_totals")
-            .help("Web Client Total Count")
-            .labelNames("path")
-            .register();
         
-        statuses = Counter.builder()
-            .name("webclient_status")
-            .help("Web Client Count By Status")
-            .labelNames("path", "status")
-            .register();
-        
-        buckets = Histogram.builder()
-            .name("webclient_duration_seconds")
-            .help("Web Client Duration in Seconds")
-            .unit(Unit.SECONDS)
-            .labelNames("path")
-            .register();
     }
     
     @Override
@@ -60,4 +43,24 @@ public class WebClientMetrics implements WebClientService {
         return resp;
     }
     
+    static {
+        total = Counter.builder()
+            .name("webclient_totals")
+            .help("Web Client Total Count")
+            .labelNames("path")
+            .register();
+        
+        statuses = Counter.builder()
+            .name("webclient_status")
+            .help("Web Client Count By Status")
+            .labelNames("path", "status")
+            .register();
+        
+        buckets = Histogram.builder()
+            .name("webclient_duration_seconds")
+            .help("Web Client Duration in Seconds")
+            .unit(Unit.SECONDS)
+            .labelNames("path")
+            .register();
+    }
 }
