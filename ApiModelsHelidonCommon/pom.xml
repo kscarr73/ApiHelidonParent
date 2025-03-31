@@ -4,7 +4,7 @@
 
     <groupId>com.progbits.api.helidon.filters</groupId>
     <artifactId>ApiModelsHelidonCommon</artifactId>
-    <version>1.0.5</version>
+    <version>1.0.6</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -68,6 +68,11 @@
             <groupId>com.progbits.api.helidon.media</groupId>
             <artifactId>ApiModelsHelidonMediaYaml</artifactId>
             <version>1.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.progbits.api.util</groupId>
+            <artifactId>ApiUtils_jre21</artifactId>
+            <version>2.0.2</version>
         </dependency>
         <dependency>
             <groupId>io.prometheus</groupId>

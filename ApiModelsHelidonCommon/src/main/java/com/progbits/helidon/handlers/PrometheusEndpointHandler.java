@@ -13,10 +13,9 @@ import io.prometheus.metrics.expositionformats.ExpositionFormats;
 import io.prometheus.metrics.model.registry.PrometheusRegistry;
 
 public class PrometheusEndpointHandler implements HttpService {
-    public static final String DEFAULT_PATH = "/metrics";
     
-    private PrometheusRegistry registry;
-    private ExpositionFormats prometheusFormats;
+    private final PrometheusRegistry registry;
+    private final ExpositionFormats prometheusFormats;
 
     public PrometheusEndpointHandler() {
         prometheusFormats = ExpositionFormats.init();
