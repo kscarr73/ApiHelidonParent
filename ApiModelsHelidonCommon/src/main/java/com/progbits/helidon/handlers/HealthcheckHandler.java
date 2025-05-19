@@ -100,7 +100,7 @@ public class HealthcheckHandler implements HttpService {
         }
     }
     
-    private boolean validateHealth(ApiObject objHealth) {
+    protected boolean validateHealth(ApiObject objHealth) {
         boolean bFailed = false;
 
         if (objHealth.isSet(FIELD_HEALTHCHECK)) {
@@ -112,7 +112,8 @@ public class HealthcheckHandler implements HttpService {
                 } 
             }
         } else {
-            bFailed = true;
+            // Set as Not Failed, because there are no checks, so we are runnings
+            bFailed = false;
         }
 
         return bFailed;
@@ -123,7 +124,7 @@ public class HealthcheckHandler implements HttpService {
         + "                                <td class=\"table-%%CLASS%%\">%%STATUS%%</td>\n"
         + "                            </tr>";
 
-    private ApiObject gatherHealthchecks(String[] levels) {
+    protected ApiObject gatherHealthchecks(String[] levels) {
         String[] lclLevels = levels;
 
         if (lclLevels.length == 0) {
