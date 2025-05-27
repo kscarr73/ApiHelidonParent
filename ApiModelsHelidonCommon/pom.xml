@@ -4,13 +4,14 @@
 
     <groupId>com.progbits.api.helidon.filters</groupId>
     <artifactId>ApiModelsHelidonCommon</artifactId>
-    <version>1.0.8</version>
+    <version>1.1.0</version>
     <packaging>jar</packaging>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
+        <helidon.version>4.2.2</helidon.version>
     </properties>
 
     <repositories>
@@ -32,42 +33,42 @@
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-http2</artifactId>
-            <version>4.2.0</version>
+            <version>${helidon.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.logging</groupId>
             <artifactId>helidon-logging-slf4j</artifactId>
-            <version>4.2.0</version>
+            <version>${helidon.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.webclient</groupId>
             <artifactId>helidon-webclient-http2</artifactId>
-            <version>4.2.0</version>
+            <version>${helidon.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.http.encoding</groupId>
             <artifactId>helidon-http-encoding-gzip</artifactId>
-            <version>4.2.0</version>
+            <version>${helidon.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.http.encoding</groupId>
             <artifactId>helidon-http-encoding-deflate</artifactId>
-            <version>4.2.0</version>
+            <version>${helidon.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-yaml</artifactId>
-            <version>4.2.0</version>
+            <version>${helidon.version}</version>
         </dependency>
         <dependency>
             <groupId>com.progbits.api.helidon.media</groupId>
             <artifactId>ApiModelsHelidonMediaJson</artifactId>
-            <version>1.0.1</version>
+            <version>1.1.0</version>
         </dependency>
         <dependency>
             <groupId>com.progbits.api.helidon.media</groupId>
             <artifactId>ApiModelsHelidonMediaYaml</artifactId>
-            <version>1.0.1</version>
+            <version>1.1.0</version>
         </dependency>
         <dependency>
             <groupId>com.progbits.api.util</groupId>

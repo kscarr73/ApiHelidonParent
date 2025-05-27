@@ -3,7 +3,6 @@ package com.progbits.helidon.handlers;
 import com.progbits.api.exception.ApiException;
 import com.progbits.api.model.ApiObject;
 import com.progbits.api.utils.ApiResources;
-import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.HeaderNames;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
@@ -47,6 +46,10 @@ public class HealthcheckHandler implements HttpService {
         }
     }
 
+    public void setHealthChecks(Map<String, List<HealthCheck>> healthchecks) {
+        this.healthchecks.putAll(healthchecks);
+    }
+    
     public void registerHealthCheck(String level, HealthCheck check) {
         if (!healthchecks.containsKey(level)) {
             healthchecks.put(level, new ArrayList<>());

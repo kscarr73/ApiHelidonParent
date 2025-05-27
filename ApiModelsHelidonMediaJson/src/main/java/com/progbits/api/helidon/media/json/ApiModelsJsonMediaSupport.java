@@ -23,19 +23,30 @@ public class ApiModelsJsonMediaSupport implements MediaSupport {
     private final String name = "ApiModelsJson";
     private final ApiJsonWriter writer = new ApiJsonWriter();
     private final ApiJsonReader reader = new ApiJsonReader();
+    private boolean useDefault = false;
 
+    public ApiModelsJsonMediaSupport() {
+    }
+
+    public ApiModelsJsonMediaSupport(boolean useDefault) {
+        this.useDefault = useDefault;
+    }
+    
     @Override
     public <T> ReaderResponse<T> reader(GenericType<T> type, Headers requestHeaders) {
-        if (requestHeaders.contentType()
-            .map(it -> it.test(MediaTypes.APPLICATION_JSON))
-            .orElse(true)) {
+        if (requestHeaders.contentType().isPresent()
+            && requestHeaders.contentType().get().mediaType() == MediaTypes.APPLICATION_JSON) {
             if (type.equals(API_JSON_TYPE)) {
-                // leave this to JSON-P
+                return new ReaderResponse<>(SupportLevel.COMPATIBLE, this::reader);
+            } else {
                 return ReaderResponse.unsupported();
             }
-            return new ReaderResponse<>(SupportLevel.COMPATIBLE, this::reader);
         }
 
+        if (useDefault && requestHeaders.contentType().isEmpty()) {
+            return new ReaderResponse<>(SupportLevel.COMPATIBLE, this::reader);
+        }
+        
         return ReaderResponse.unsupported();
     }
 
@@ -45,6 +56,16 @@ public class ApiModelsJsonMediaSupport implements MediaSupport {
             return WriterResponse.unsupported();
         }
 
+        // Check if Wildcard type
+        if (!requestHeaders.acceptedTypes().isEmpty() && 
+              requestHeaders.acceptedTypes().getFirst().isWildcardType()) {
+            if (useDefault) {
+                return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
+            } else {
+                return WriterResponse.unsupported();
+            }
+        }
+        
         // check if accepted
         for (HttpMediaType acceptedType : requestHeaders.acceptedTypes()) {
             if (acceptedType.test(MediaTypes.APPLICATION_JSON)) {
