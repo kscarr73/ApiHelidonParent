@@ -42,6 +42,9 @@ public class ApiRouterProcessor {
 
     private String healthCheckTitle;
     private String healthCheckSubTitle;
+    
+    private String errorCode = "code";
+    private String errorMessage = "message";
 
     Map<String, List<HealthCheck>> healthchecks = new HashMap<>();
 
@@ -81,6 +84,13 @@ public class ApiRouterProcessor {
         return this;
     }
 
+    public ApiRouterProcessor errorFields(String code, String message) {
+        this.errorCode = code;
+        this.errorMessage = message;
+        
+        return this;
+    }
+    
     public void process(Logger log) {
         if (xflowIdPrefix != null) {
             route.addFilter(new XFlowIdFilter(xflowIdPrefix));
@@ -111,8 +121,8 @@ public class ApiRouterProcessor {
         route.error(HttpException.class, (req, res, ex) -> {
             ApiObject o = new ApiObject();
 
-            o.setString("message", ex.getMessage());
-            o.setInteger("code", ex.status().code());
+            o.setString(errorMessage, ex.getMessage());
+            o.setInteger(errorCode, ex.status().code());
 
             res.status(ex.status().code());
             res.send(o);
@@ -123,8 +133,8 @@ public class ApiRouterProcessor {
         route.error(ApiException.class, (req, res, ex) -> {
             ApiObject o = new ApiObject();
 
-            o.setString("message", ex.getMessage());
-            o.setInteger("code", ex.getCode());
+            o.setString(errorMessage, ex.getMessage());
+            o.setInteger(errorCode, ex.getCode());
 
             res.status(ex.getCode());
             res.send(o);
