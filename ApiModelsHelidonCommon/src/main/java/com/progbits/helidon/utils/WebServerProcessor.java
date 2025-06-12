@@ -1,5 +1,6 @@
 package com.progbits.helidon.utils;
 
+import com.progbits.api.config.ConfigProvider;
 import com.progbits.api.helidon.media.json.ApiModelsJsonMediaSupport;
 import com.progbits.api.helidon.media.yaml.ApiModelsYamlMediaSupport;
 import io.helidon.config.Config;
@@ -29,13 +30,41 @@ public class WebServerProcessor {
      * @return WebServerConfig.Builder with or without ApiObject and Gzip Handling
      */
     public static WebServerConfig.Builder returnWebServer(boolean apiObjects, boolean gzipEncoding) {
-        Config helidonConfig = Config.create();
-        
+        return returnWebServer(false, apiObjects, gzipEncoding);
+    }
+    
+    /**
+     * Return a WebServerBuilder for creating a Helidon WebServer instance
+     * 
+     * <p>Expects application.yaml in Classpath with a server object</p>
+     * <p>Example:<br>WebServerProcessor.returnWebServer(true, true)<br>
+     * .router(DefaultRoutes::routing)<br>
+     * .build()<br>
+     * .start()<br></p>
+     * 
+     * @param useApiConfig Use Api ConfigProvider instead of Config from Helidon
+     * @param apiObjects true/false Setup ApiObject Media handling
+     * @param gzipEncoding true/false Setup GZip Handling
+     * @return WebServerConfig.Builder with or without ApiObject and Gzip Handling
+     */
+    public static WebServerConfig.Builder returnWebServer(boolean useApiConfig, boolean apiObjects, boolean gzipEncoding) {
         LogConfig.configureRuntime();
         
         var webServerBuilder = WebServer.builder();
         
-        webServerBuilder.config(helidonConfig.get("server"));
+        if (!useApiConfig) {
+            Config helidonConfig = Config.create();
+            
+            webServerBuilder.config(helidonConfig.get("server"));
+        } else {
+            ConfigProvider apiConfig = ConfigProvider.getInstance();
+            
+            String host = apiConfig.getStringProperty("server.host", "0.0.0.0");
+            Integer port = apiConfig.getIntProperty("server.port", 8080);
+            
+            webServerBuilder.host(host);
+            webServerBuilder.port(port);
+        }
         
         if (apiObjects) {
             var mediaCtx = MediaContext.builder()
