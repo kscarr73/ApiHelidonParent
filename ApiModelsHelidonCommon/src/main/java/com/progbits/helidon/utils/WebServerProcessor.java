@@ -59,8 +59,8 @@ public class WebServerProcessor {
         } else {
             ConfigProvider apiConfig = ConfigProvider.getInstance();
             
-            String host = apiConfig.getStringProperty("server.host", "0.0.0.0");
-            Integer port = apiConfig.getIntProperty("server.port", 8080);
+            String host = apiConfig.getConfig().getString("server.host", "0.0.0.0");
+            Integer port = apiConfig.getConfig().getInteger("server.port", 8080);
             
             webServerBuilder.host(host);
             webServerBuilder.port(port);
