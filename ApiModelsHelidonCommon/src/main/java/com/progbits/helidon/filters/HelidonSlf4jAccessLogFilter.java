@@ -132,9 +132,8 @@ public class HelidonSlf4jAccessLogFilter implements Filter {
                     .addKeyValue("clientip", req.remotePeer().address().toString())
                     .addKeyValue("reqhost", req.localPeer().host())
                     .addKeyValue("reqproto", req.requestedUri().scheme())
-                    .addKeyValue("request", String.format("%s %s %s", req.prologue().method().toString(),
-                        req.requestedUri().toUri().toString(),
-                        !req.query().isEmpty() ? "?" + req.query().rawValue() : ""))
+                    .addKeyValue("request", String.format("%s %s", req.prologue().method().toString(),
+                        req.requestedUri().path().toString()))
                     .addKeyValue("sourceip", req.localPeer().address().toString());
 
                 if (req.headers().size() > 0) {

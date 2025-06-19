@@ -7,6 +7,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import static com.progbits.api.helidon.media.yaml.ApiYamlConstants.CONTENT_TYPE_YAML;
 import io.helidon.http.HttpMediaType;
+import io.helidon.http.HttpMediaTypes;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.EntityWriter;
@@ -68,8 +69,8 @@ public class ApiModelsYamlMediaSupport implements MediaSupport {
         
         // check if accepted
         for (HttpMediaType acceptedType : requestHeaders.acceptedTypes()) {
-            if (acceptedType.test(MediaTypes.APPLICATION_YAML) ||
-                acceptedType.test(MediaTypes.APPLICATION_X_YAML)) {
+            if (acceptedType.mediaType().equals(MediaTypes.APPLICATION_YAML) ||
+                acceptedType.mediaType().equals(MediaTypes.APPLICATION_X_YAML)) {
                 return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
             }
         }

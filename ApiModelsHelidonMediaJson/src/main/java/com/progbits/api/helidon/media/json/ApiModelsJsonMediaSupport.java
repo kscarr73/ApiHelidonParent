@@ -66,9 +66,9 @@ public class ApiModelsJsonMediaSupport implements MediaSupport {
             }
         }
         
-        // check if accepted
+        // check if accepted 
         for (HttpMediaType acceptedType : requestHeaders.acceptedTypes()) {
-            if (acceptedType.test(MediaTypes.APPLICATION_JSON)) {
+            if (acceptedType.mediaType().equals(MediaTypes.APPLICATION_JSON)) {
                 return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
             }
         }
