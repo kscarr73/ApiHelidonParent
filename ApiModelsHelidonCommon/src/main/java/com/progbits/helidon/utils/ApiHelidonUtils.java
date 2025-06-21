@@ -5,6 +5,7 @@ import io.helidon.http.HeaderName;
 import io.helidon.http.HttpException;
 import io.helidon.http.Status;
 import io.helidon.webserver.http.ServerRequest;
+import java.util.List;
 
 /**
  *
@@ -26,6 +27,18 @@ public class ApiHelidonUtils {
     public static String getQueryVar(ServerRequest req, String field, boolean required) throws HttpException {
         if (req.query().contains(field)) {
             return req.query().get(field);
+        } else {
+            if (required) {
+                throw new HttpException(field + " IS REQUIRED", Status.BAD_REQUEST_400);
+            } else {
+                return null;
+            }
+        }
+    }
+    
+    public static List<String> getQueryVarAsList(ServerRequest req, String field, boolean required) throws HttpException {
+        if (req.query().contains(field)) {
+            return req.query().all(field);
         } else {
             if (required) {
                 throw new HttpException(field + " IS REQUIRED", Status.BAD_REQUEST_400);
