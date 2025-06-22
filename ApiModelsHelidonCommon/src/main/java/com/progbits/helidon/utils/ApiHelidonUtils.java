@@ -1,10 +1,11 @@
 package com.progbits.helidon.utils;
 
-import io.helidon.common.GenericType;
+import com.progbits.api.model.ApiObject;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HttpException;
 import io.helidon.http.Status;
 import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 import java.util.List;
 
 /**
@@ -85,6 +86,16 @@ public class ApiHelidonUtils {
             } else {
                 return null;
             }
+        }
+    }
+    
+    public static void send(ServerResponse resp, Integer code, ApiObject subject) throws HttpException {
+        if (subject == null) {
+            resp.status(204);
+            resp.send();
+        } else {
+            resp.status(code);
+            resp.send(subject);
         }
     }
 }

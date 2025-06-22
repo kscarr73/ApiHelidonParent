@@ -118,28 +118,27 @@ public class ApiRouterProcessor {
             route.register(new ApiRapiDocHandler(contextPath));
         }
 
-        route.error(HttpException.class, (req, res, ex) -> {
+        route.error(Exception.class, (req, res, ex) -> {
             ApiObject o = new ApiObject();
-
+            Integer statusCode = 500;
+            
+            if (ex instanceof HttpException he) {
+                statusCode = he.status().code();
+            } else if (ex instanceof ApiException apx) {
+                statusCode = apx.getCode();
+            } 
+            
+            o.setInteger(errorCode, statusCode);
+            res.status(statusCode);
+                
             o.setString(errorMessage, ex.getMessage());
-            o.setInteger(errorCode, ex.status().code());
-
-            res.status(ex.status().code());
+            
             res.send(o);
 
-            log.atError().setCause(ex).log(ex.getMessage() + ": " + req.requestedUri().toUri().toString());
+            if (statusCode != 400 && statusCode != 403) {
+                log.atError().setCause(ex).log(ex.getMessage() + ": " + req.requestedUri().toUri().toString());
+            }
         });
-
-        route.error(ApiException.class, (req, res, ex) -> {
-            ApiObject o = new ApiObject();
-
-            o.setString(errorMessage, ex.getMessage());
-            o.setInteger(errorCode, ex.getCode());
-
-            res.status(ex.getCode());
-            res.send(o);
-
-            log.atError().setCause(ex).log(ex.getMessage() + ": " + req.requestedUri().toUri().toString());
-        });
+        
     }
 }
