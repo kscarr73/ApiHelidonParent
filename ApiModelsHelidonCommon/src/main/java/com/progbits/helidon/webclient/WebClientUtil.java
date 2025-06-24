@@ -116,6 +116,10 @@ public class WebClientUtil {
         }
     }
 
+    public static ClientResponseTyped<ApiObject> makeHttpCallWithResp(WebClient client, String url, String method, String authorization, ApiObject props, ApiObject payload) {
+        return makeHttpCallWithResp(client, url, method, authorization, props, payload, false);
+    }
+    
     /**
      * Make an HTTP Call.
      *
@@ -132,13 +136,18 @@ public class WebClientUtil {
      * @param payload Payload to send. If `formdata: true` is set, then the
      * request is sent application/x-www-form-urlencoded, otherwise sent as
      * ApiObject with Content-Type JSON or YAML.
+     * @param forceHttp1 Should we use Http1 only.
      *
      * @return ClientResponseTyped The entity will be the ApiObject returned.
      * You have full access to the Response object
      */
-    public static ClientResponseTyped<ApiObject> makeHttpCallWithResp(WebClient client, String url, String method, String authorization, ApiObject props, ApiObject payload) {
+    public static ClientResponseTyped<ApiObject> makeHttpCallWithResp(WebClient client, String url, String method, String authorization, ApiObject props, ApiObject payload, boolean forceHttp1) {
         HttpClientRequest req = client.method(Method.create(method));
 
+        if (forceHttp1) {
+            req.protocolId("http/1.1");
+        }
+        
         if (url.startsWith("http:")) {
             req.uri(url);
         } else {
