@@ -4,7 +4,7 @@
 
     <groupId>com.progbits.api.helidon.filters</groupId>
     <artifactId>ApiModelsHelidonCommon</artifactId>
-    <version>1.1.8</version>
+    <version>1.1.9</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -68,7 +68,7 @@
         <dependency>
             <groupId>com.progbits.api.helidon.media</groupId>
             <artifactId>ApiModelsHelidonMediaYaml</artifactId>
-            <version>1.1.1</version>
+            <version>1.1.2</version>
         </dependency>
         <dependency>
             <groupId>com.progbits.api.config</groupId>

@@ -26,17 +26,17 @@ public class WebClientMetrics implements WebClientService {
     public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest clientRequest) {
         WebClientServiceResponse resp = null;
         
-        Timer tmr = buckets.labelValues(clientRequest.uri().path().rawPathNoParams()).startTimer();
+        Timer tmr = buckets.labelValues(clientRequest.uri().path().rawPathNoParams(), clientRequest.method().text()).startTimer();
         
         try {
-            total.labelValues(clientRequest.uri().path().rawPathNoParams()).inc();
+            total.labelValues(clientRequest.uri().path().rawPathNoParams(), clientRequest.method().text()).inc();
             resp = chain.proceed(clientRequest);
         } finally {
             tmr.observeDuration();
             tmr.close();
             
             if (resp != null) {
-                statuses.labelValues(clientRequest.uri().path().rawPathNoParams(), resp.status().codeText()).inc();
+                statuses.labelValues(clientRequest.uri().path().rawPathNoParams(), resp.status().codeText(), clientRequest.method().text()).inc();
             }
         }
         
@@ -47,20 +47,20 @@ public class WebClientMetrics implements WebClientService {
         total = Counter.builder()
             .name("webclient_totals")
             .help("Web Client Total Count")
-            .labelNames("path")
+            .labelNames("path", "method")
             .register();
         
         statuses = Counter.builder()
             .name("webclient_status")
             .help("Web Client Count By Status")
-            .labelNames("path", "status")
+            .labelNames("path", "status", "method")
             .register();
         
         buckets = Histogram.builder()
             .name("webclient_duration_seconds")
             .help("Web Client Duration in Seconds")
             .unit(Unit.SECONDS)
-            .labelNames("path")
+            .labelNames("path", "method")
             .register();
     }
 }
