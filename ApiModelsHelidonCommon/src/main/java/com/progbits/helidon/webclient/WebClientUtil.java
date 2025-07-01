@@ -28,6 +28,11 @@ import org.slf4j.MDC;
  */
 public class WebClientUtil {
 
+    public static final String BASE_URI = "baseUri";
+    public static final String INCLUDE_PROMETHEUS = "includePrometheus";
+    public static final String ENABLE_COMPRESSION = "enableCompression";
+    public static final String TRUNCATE_URLS = "truncateUrls";
+    
     /**
      * Return a WebClient with ApiObject media Support.
      *
@@ -57,6 +62,41 @@ public class WebClientUtil {
      * @return The Created WebClient
      */
     public static WebClient getClient(String baseUri, boolean includePrometheus, boolean enableCompression) {
+        ApiObject baseConfig = new ApiObject();
+        
+        baseConfig.setString(BASE_URI, baseUri);
+        baseConfig.setBoolean(INCLUDE_PROMETHEUS, includePrometheus);
+        baseConfig.setBoolean(ENABLE_COMPRESSION, enableCompression);
+        
+        return getClient(baseConfig);
+    }
+
+    /**
+     * Return a WebClient with ApiObject media support
+     *
+     * <p>baseConfig can include the following:</p>
+     * 
+     * <ul>
+     * <li>baseUri Optional sets a Base URI for the WebClient
+     * <li>includePrometheus If TRUE, will return a WebClient with Prometheus
+     * metrics
+     * <li>enableCompression: Enables gzip and deflate handling
+     * <li>truncateUrls: String Array of the URLs that should be truncated for Prometheus metricss
+     * </ul>
+     * 
+     * Prometheus metrics includes:
+     * <ul>
+     * <li>webclient_totals: Counter - path is included in totals</li>
+     * <li>webclient_status: Counter - Count of Each Status by Path and
+     * Status</li>
+     * <li>webclient_duration_seconds: Histogram - Duration by Path</li>
+     * </ul>
+     *
+     * @param baseConfig ApiObject with the following parameters:
+     * 
+     * @return The Created WebClient
+     */
+    public static WebClient getClient(ApiObject baseConfig) {
         Config config = Config.create();
 
         var webClient = WebClient.builder()
@@ -64,15 +104,15 @@ public class WebClientUtil {
             .addMediaSupport(new ApiModelsJsonMediaSupport())
             .addMediaSupport(new ApiModelsYamlMediaSupport());
 
-        if (baseUri != null) {
-            webClient.baseUri(baseUri);
+        if (baseConfig.isSet(BASE_URI)) {
+            webClient.baseUri(baseConfig.getString(BASE_URI));
         }
 
-        if (includePrometheus) {
-            webClient.addService(new WebClientMetrics());
+        if (baseConfig.isSet(INCLUDE_PROMETHEUS)) {
+            webClient.addService(new WebClientMetrics(baseConfig));
         }
 
-        if (enableCompression) {
+        if (baseConfig.isSet(ENABLE_COMPRESSION)) {
             webClient.addHeader(HeaderNames.ACCEPT_ENCODING, "gzip, deflate");
             webClient.contentEncoding(
                 ContentEncodingContextConfig.builder()
@@ -84,7 +124,7 @@ public class WebClientUtil {
         
         return webClient.build();
     }
-
+    
     /**
      * Make an HTTP Call.
      *
@@ -173,12 +213,22 @@ public class WebClientUtil {
                 }
             }
 
+            if (props.isSet("pathParams")) {
+                ApiObject pathParams = props.getObject("pathParams");
+                
+                for (var pathParam : pathParams.keySet()) {
+                    req.pathParam(pathParam, pathParams.getString(pathParam));
+                }
+            }
+            
             if (props.isSet("params")) {
-                for (var prop : props.getObject("params").keySet()) {
-                    if (props.getObject("params").getType(prop) == ApiObject.TYPE_STRINGARRAY) {
-                        req.queryParam(prop, (String[]) props.getObject("params").getStringArray(prop).toArray());
+                ApiObject params = props.getObject("params");
+                
+                for (var prop : params.keySet()) {
+                    if (params.getType(prop) == ApiObject.TYPE_STRINGARRAY) {
+                        req.queryParam(prop, (String[]) params.getStringArray(prop).toArray());
                     } else {
-                        req.queryParam(prop, props.getObject("params").getString(prop));
+                        req.queryParam(prop, params.getString(prop));
                     }
                 }
             }
@@ -263,12 +313,22 @@ public class WebClientUtil {
                 }
             }
 
+            if (props.isSet("pathParams")) {
+                ApiObject pathParams = props.getObject("pathParams");
+                
+                for (var pathParam : pathParams.keySet()) {
+                    req.pathParam(pathParam, pathParams.getString(pathParam));
+                }
+            }
+            
             if (props.isSet("params")) {
-                for (var prop : props.getObject("params").keySet()) {
-                    if (props.getObject("params").getType(prop) == ApiObject.TYPE_STRINGARRAY) {
-                        req.queryParam(prop, (String[]) props.getObject("params").getStringArray(prop).toArray());
+                ApiObject params = props.getObject("params");
+                
+                for (var prop : params.keySet()) {
+                    if (params.getType(prop) == ApiObject.TYPE_STRINGARRAY) {
+                        req.queryParam(prop, (String[]) params.getStringArray(prop).toArray());
                     } else {
-                        req.queryParam(prop, props.getObject("params").getString(prop));
+                        req.queryParam(prop, params.getString(prop));
                     }
                 }
             }
