@@ -4,13 +4,14 @@
 
     <groupId>com.progbits.api.helidon.media</groupId>
     <artifactId>ApiModelsHelidonMediaJson</artifactId>
-    <version>1.1.1</version>
+    <version>1.1.2</version>
     <packaging>jar</packaging>
 
         <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
+        <helidon.version>4.2.3</helidon.version>
     </properties>
 
     <repositories>
@@ -32,12 +33,12 @@
         <dependency>
             <groupId>io.helidon.http.media</groupId>
             <artifactId>helidon-http-media</artifactId>
-            <version>4.2.2</version>
+            <version>${helidon.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
-            <version>4.2.2</version>
+            <version>${helidon.version}</version>
         </dependency>
         <dependency>
             <groupId>com.progbits.api.transforms</groupId>

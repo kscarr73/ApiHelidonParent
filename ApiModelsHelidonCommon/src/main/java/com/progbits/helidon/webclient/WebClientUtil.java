@@ -156,6 +156,40 @@ public class WebClientUtil {
             throw new ApiException(resp.status().code(), resp.entity().getString(errorField));
         }
     }
+    
+    /**
+     * Process an Http call and return an ApiObject.
+     * 
+     * <p>Response Fields:</p>
+     * <ul>
+     * <li><b>status</b>: The status code from the call
+     * <li><b>statusText</b>: The text of the Status code from the call
+     * <li><b>success</b>: If the status code is from 200 to 299
+     * <li><b>statusFamily</b> SUCCESSFULL 200-299, CLIENT_ERROR 400-499, SERVER_ERROR 500-599 
+     * <li><b>payload</b>: ApiObject if Content-Type JSON or YAML, String if not
+     * </ul>
+     * @param client The WebClient to use for the call
+     * @param url The URL, can be partial if WebClient configured with a baseUri
+     * @param method The method for the call.  Example:  GET, POST, PATCH, DELETE
+     * @param authorization The authorization to use for the call, null for none.
+     * @param props Properties to use for the call.  headers, params for Query Params, pathParams for Path params
+     * @param payload The payload to send to the server 
+     * 
+     * @return ApiObject with the response from the call
+     * 
+     * @throws ApiException 
+     */
+    public static ApiObject callHttp(WebClient client, String url, String method, String authorization, ApiObject props, ApiObject payload) throws ApiException {
+        HttpClientResponse resp = makeHttpCall(client, url, method, authorization, props, payload, false);
+        
+        return ProcessResponse.processResponse(resp);
+    }
+    
+    public static ApiObject callHttp(WebClient client, boolean forceHttp1, String url, String method, String authorization, ApiObject props, ApiObject payload) throws ApiException {
+        HttpClientResponse resp = makeHttpCall(client, url, method, authorization, props, payload, forceHttp1);
+        
+        return ProcessResponse.processResponse(resp);
+    }
 
     public static ClientResponseTyped<ApiObject> makeHttpCallWithResp(WebClient client, String url, String method, String authorization, ApiObject props, ApiObject payload) {
         return makeHttpCallWithResp(client, url, method, authorization, props, payload, false);
@@ -183,69 +217,8 @@ public class WebClientUtil {
      * You have full access to the Response object
      */
     public static ClientResponseTyped<ApiObject> makeHttpCallWithResp(WebClient client, String url, String method, String authorization, ApiObject props, ApiObject payload, boolean forceHttp1) {
-        HttpClientRequest req = client.method(Method.create(method));
-
-        if (forceHttp1) {
-            req.protocolId("http/1.1");
-        }
+        HttpClientRequest req = createRequest(client, url, method, authorization, props, payload, forceHttp1);
         
-        if (url.startsWith("http:")) {
-            req.uri(url);
-        } else {
-            req.path(url);
-        }
-
-        if (authorization != null) {
-            req.header(HeaderNames.AUTHORIZATION, authorization);
-        }
-
-        if (props != null) {
-            if (props.isSet("headers")) {
-                for (var hdr : props.getObject("headers").keySet()) {
-                    if ("Content-Type".equals(hdr)) {
-                        req.contentType(MediaTypes.create(props.getObject("headers").getString(hdr)));
-                    }
-                    if ("Accept".equals(hdr)) {
-                        req.accept(MediaTypes.create(props.getObject("headers").getString(hdr)));
-                    } else {
-                        req.header(HeaderNames.create(hdr), props.getObject("headers").getString(hdr));
-                    }
-                }
-            }
-
-            if (props.isSet("pathParams")) {
-                ApiObject pathParams = props.getObject("pathParams");
-                
-                for (var pathParam : pathParams.keySet()) {
-                    req.pathParam(pathParam, pathParams.getString(pathParam));
-                }
-            }
-            
-            if (props.isSet("params")) {
-                ApiObject params = props.getObject("params");
-                
-                for (var prop : params.keySet()) {
-                    if (params.getType(prop) == ApiObject.TYPE_STRINGARRAY) {
-                        req.queryParam(prop, (String[]) params.getStringArray(prop).toArray());
-                    } else {
-                        req.queryParam(prop, params.getString(prop));
-                    }
-                }
-            }
-
-            if (!props.isSet("headers.Content-Type")) {
-                req.contentType(MediaTypes.APPLICATION_JSON);
-            }
-        } else {
-            req.contentType(MediaTypes.APPLICATION_JSON);
-        }
-
-        String flowId = MDC.get("flowid");
-
-        if (flowId != null) {
-            req.header(XFlowIdFilter.XFLOWID, flowId);
-        }
-
         ClientResponseTyped<ApiObject> resp;
 
         if (payload != null) {
@@ -283,13 +256,52 @@ public class WebClientUtil {
     }
     
     public static HttpClientResponse makeHttpCall(WebClient client, String url, String method, String authorization, ApiObject props, ApiObject payload, boolean forceHttp1) {
+        HttpClientRequest req = createRequest(client, url, method, authorization, props, payload, forceHttp1);
+
+        HttpClientResponse resp;
+
+        if (payload != null) {
+            if (payload.containsKey("formdata")) {
+                req.contentType(MediaTypes.APPLICATION_FORM_URLENCODED);
+
+                StringBuilder sbForm = new StringBuilder();
+                boolean isFirst = true;
+
+                for (var entry : payload.keySet()) {
+                    if (!"formdata".equals(entry)) {
+                        if (!isFirst) {
+                            sbForm.append("&");
+                        } else {
+                            isFirst = false;
+                        }
+
+                        Object objValue = payload.get(entry);
+
+                        if (objValue != null) {
+                            sbForm.append(entry).append("=").append(URLEncoder.encode(Objects.toString(objValue), Charset.forName("UTF-8")));
+                        }
+                    }
+                }
+                
+                resp = req.submit(sbForm.toString());
+            } else {
+                resp = req.submit(payload);
+            }
+        } else {
+            resp = req.request();
+        }
+
+        return resp;
+    }
+    
+    private static HttpClientRequest createRequest(WebClient client, String url, String method, String authorization, ApiObject props, ApiObject payload, boolean forceHttp1) {
         HttpClientRequest req = client.method(Method.create(method));
 
         if (forceHttp1) {
             req.protocolId("http/1.1");
         }
         
-        if (url.startsWith("http:")) {
+        if (url.startsWith("http")) {
             req.uri(url);
         } else {
             req.path(url);
@@ -346,39 +358,6 @@ public class WebClientUtil {
             req.header(XFlowIdFilter.XFLOWID, flowId);
         }
 
-        HttpClientResponse resp;
-
-        if (payload != null) {
-            if (payload.containsKey("formdata")) {
-                req.contentType(MediaTypes.APPLICATION_FORM_URLENCODED);
-
-                StringBuilder sbForm = new StringBuilder();
-                boolean isFirst = true;
-
-                for (var entry : payload.keySet()) {
-                    if (!"formdata".equals(entry)) {
-                        if (!isFirst) {
-                            sbForm.append("&");
-                        } else {
-                            isFirst = false;
-                        }
-
-                        Object objValue = payload.get(entry);
-
-                        if (objValue != null) {
-                            sbForm.append(entry).append("=").append(URLEncoder.encode(Objects.toString(objValue), Charset.forName("UTF-8")));
-                        }
-                    }
-                }
-                
-                resp = req.submit(sbForm.toString());
-            } else {
-                resp = req.submit(payload);
-            }
-        } else {
-            resp = req.request();
-        }
-
-        return resp;
+        return req;
     }
 }
