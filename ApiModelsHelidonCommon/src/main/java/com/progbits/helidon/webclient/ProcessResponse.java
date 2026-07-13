@@ -49,9 +49,17 @@ public class ProcessResponse {
 
                     if (contentEncoding.isPresent()) {
                         if ("gzip".equals(contentEncoding.get())) {
-                            inputStream = new BufferedReader(new InputStreamReader(new GZIPInputStream(resp.inputStream())));
+                            if (resp.inputStream() instanceof GZIPInputStream) {
+                                inputStream = new BufferedReader(new InputStreamReader(resp.inputStream()));
+                            } else {
+                                inputStream = new BufferedReader(new InputStreamReader(new GZIPInputStream(resp.inputStream())));
+                            }
                         } else if ("deflate".equals(contentEncoding.get())) {
-                            inputStream = new BufferedReader(new InputStreamReader(new InflaterInputStream(resp.inputStream())));
+                            if (resp.inputStream() instanceof InflaterInputStream) {
+                                inputStream = new BufferedReader(new InputStreamReader(resp.inputStream()));
+                            } else {
+                                inputStream = new BufferedReader(new InputStreamReader(new InflaterInputStream(resp.inputStream())));
+                            }
                         } else {
                             inputStream = new BufferedReader(new InputStreamReader(resp.inputStream()));
                         }
