@@ -1,143 +1,180 @@
-# ApiHelidonParent
+# ApiHelidonParent — Project Description
 
-Maven parent project that provides [Helidon 4](https://helidon.io/) integration for the Progbits **ApiObject** model. These libraries wire Progbits API types into Helidon web servers and HTTP clients, with built-in support for observability, health checks, and API documentation.
+## Overview
 
-**Version:** 1.2.0  
-**Java:** 21  
-**Helidon:** 4.3.2
+**ApiHelidonParent** is a multi-module Maven parent project that bridges the Progbits **ApiObject** data model with [Helidon 4.x](https://helidon.io/) web servers and HTTP clients. It provides reusable libraries for building production-ready microservices that speak JSON and YAML natively through `ApiObject`, with observability, health reporting, and API documentation built in from the start.
 
-## Modules
+Rather than wiring Helidon media providers, filters, and operational endpoints by hand in every service, applications depend on these modules and get a consistent stack: request/response serialization, distributed tracing, Prometheus metrics, structured access logs, health checks, and an interactive RapiDoc UI.
 
-| Module | Artifact | Description |
-|--------|----------|-------------|
-| [ApiModelsHelidonMediaJson](ApiModelsHelidonMediaJson/) | `com.progbits.api.helidon.media:ApiModelsHelidonMediaJson` | JSON serialization/deserialization for `ApiObject` via Helidon media support |
-| [ApiModelsHelidonMediaYaml](ApiModelsHelidonMediaYaml/) | `com.progbits.api.helidon.media:ApiModelsHelidonMediaYaml` | YAML serialization/deserialization for `ApiObject` |
-| [ApiModelsHelidonCommon](ApiModelsHelidonCommon/) | `com.progbits.api.helidon.filters:ApiModelsHelidonCommon` | Server bootstrap, routing, filters, handlers, and HTTP client utilities |
+| Property | Value |
+|----------|-------|
+| Version | 1.3.0 |
+| Java | 21 |
+| Helidon | 4.5.0 |
+| Packaging | Maven multi-module (`pom`) |
+| License | MIT |
 
-`ApiModelsHelidonCommon` depends on both media modules and on other Progbits libraries (`ApiTransforms_jre21`, `ConfigProvider_jre21`).
+## Problem It Solves
 
-## Features
+Progbits services use `ApiObject` as a flexible, map-like API model for payloads, configuration, and error responses. Helidon, by default, knows nothing about `ApiObject`. Each new service would otherwise need to:
 
-### Web server
+- Register custom JSON/YAML readers and writers
+- Propagate correlation IDs across requests and downstream calls
+- Expose `/healthcheck`, `/metrics`, and API docs endpoints
+- Normalize error handling for `HttpException` and `ApiException`
+- Configure gzip/deflate encoding, HTTP/2, and SLF4J logging
 
-- **`WebServerProcessor`** — Creates a preconfigured `WebServerConfig.Builder` with optional `ApiObject` media handling (JSON + YAML), GZip encoding, and configuration from `application.yaml` or Progbits `ConfigProvider`.
-- **`ApiRouterProcessor`** — Fluent router setup that can register:
-  - **Health checks** at `{contextPath}/healthcheck` (plain-text or HTML detail views)
-  - **Prometheus metrics** at `{contextPath}/metrics`
-  - **RapiDoc** at `{contextPath}/api` (serves bundled OpenAPI YAML)
-  - **X-Flow-Id** request tracing (header propagation and MDC integration)
-  - **SLF4J access logging**
-  - Centralized error handling for `HttpException` and `ApiException`
+ApiHelidonParent centralizes that work into three focused Maven artifacts that compose cleanly.
 
-### HTTP client
+## Architecture
 
-- **`WebClientUtil`** — Builds Helidon `WebClient` instances with `ApiObject` media support, optional Prometheus metrics (`webclient_totals`, `webclient_status`, `webclient_duration_seconds`), and gzip/deflate compression.
-- Convenience methods for making HTTP calls with headers, query params, path params, form data, and automatic `X-Flow-Id` propagation from MDC.
+```mermaid
+graph TD
+    App[Consumer microservice] --> Common[ApiModelsHelidonCommon]
 
-### Request helpers
+    Common --> MediaJson[ApiModelsHelidonMediaJson]
+    Common --> MediaYaml[ApiModelsHelidonMediaYaml]
+    Common --> Config[ConfigProvider_jre21]
+    Common --> Helidon[Helidon 4.5 WebServer / WebClient]
+    Common --> Prometheus[Prometheus JVM metrics]
 
-- **`ApiHelidonUtils`** — Extract path variables, query parameters (including typed and list values), and headers from Helidon requests; send `ApiObject` responses with appropriate status codes.
-
-### Filters
-
-| Filter | Purpose |
-|--------|---------|
-| `XFlowIdFilter` | Ensures every request has an `X-Flow-Id` header; stores the value in SLF4J MDC |
-| `HelidonSlf4jAccessLogFilter` | Structured access logging via SLF4J |
-| `HelidonPrometheusFilter` | Collects HTTP server metrics for Prometheus |
-
-## Requirements
-
-- JDK 21+
-- Maven 3.x
-- Access to the Progbits Maven repository (`https://archiva.progbits.com/coffer/repository/internal/`) for Progbits dependencies
-
-## Build
-
-From the project root:
-
-```bash
-mvn clean install
+    MediaJson --> ApiObject[Progbits ApiObject]
+    MediaYaml --> ApiObject
 ```
 
-Run tests for the common module:
+### Module breakdown
 
-```bash
-mvn test -pl ApiModelsHelidonCommon
-```
+#### ApiModelsHelidonMediaJson
 
-## Usage
+**Coordinates:** `com.progbits.api.helidon.media:ApiModelsHelidonMediaJson`
 
-### Start a web server
+Helidon `MediaSupport` integration for JSON. Registers `ApiJsonReader` and `ApiJsonWriter` so HTTP bodies typed as `ApiObject` are automatically serialized and deserialized as `application/json`.
 
-Add `application.yaml` to the classpath with a `server` section, then:
+Key classes live under `com.progbits.api.helidon.media.json`.
 
-```java
-WebServerProcessor.returnWebServer(true, true)
-    .routing(routing -> {
-        ApiRouterProcessor.builder(routing, "/api")
-            .healthCheck("My Service", "Production")
-            .registerHealthCheck(HealthcheckHandler.LEVEL_DEFAULT, myHealthCheck)
-            .xflowId("mysvc")
-            .prometheus("mysvc")
-            .process(log);
-        // register your routes on `routing`
-    })
-    .build()
-    .start();
-```
+#### ApiModelsHelidonMediaYaml
 
-### Make an HTTP call
+**Coordinates:** `com.progbits.api.helidon.media:ApiModelsHelidonMediaYaml`
 
-```java
-WebClient client = WebClientUtil.getClient("https://api.example.com", true, true);
+Same pattern for YAML. Handles `application/yaml` and `application/x-yaml` content types via `ApiYamlReader` and `ApiYamlWriter`.
 
-ApiObject props = new ApiObject();
-props.createObject("params").setString("limit", "10");
+Key classes live under `com.progbits.api.helidon.media.yaml`.
 
-ApiObject response = WebClientUtil.makeHttpCall(
-    client, "/items", "GET", null, "message", props, null);
-```
+#### ApiModelsHelidonCommon
+
+**Coordinates:** `com.progbits.api.helidon.filters:ApiModelsHelidonCommon`
+
+The main entry point for consumers. Depends on both media modules plus Helidon web server/client, Prometheus instrumentation, and Progbits `ConfigProvider_jre21`. It provides:
+
+- **Server bootstrap** — `WebServerProcessor` builds a preconfigured `WebServerConfig.Builder` with optional ApiObject media support, GZip encoding, and YAML-based configuration.
+- **Fluent routing** — `ApiRouterProcessor` wires operational endpoints and cross-cutting filters in one builder chain.
+- **Request utilities** — `ApiHelidonUtils` extracts path variables, query parameters (including typed and list values), headers, and sends `ApiObject` responses.
+- **HTTP client** — `WebClientUtil` and `ProcessResponse` for downstream calls with media support, metrics, compression, and `X-Flow-Id` propagation.
+
+## Cross-Cutting Concerns
+
+### Distributed tracing (`X-Flow-Id`)
+
+`XFlowIdFilter` ensures every inbound request carries an `X-Flow-Id` header. If the client omits one, the filter generates it. The value is stored in SLF4J MDC for log correlation and echoed on the response. `WebClientUtil` propagates the MDC value on outbound calls.
+
+### Observability
+
+| Component | Role |
+|-----------|------|
+| `HelidonPrometheusFilter` | Server-side latency histograms and request counters by path, method, and status |
+| `PrometheusEndpointHandler` | Exposes JVM and route metrics at `{contextPath}/metrics` |
+| `HelidonSlf4jAccessLogFilter` | Structured access logs (method, status, duration, headers, remote address) |
+| `WebClientMetrics` | Client-side counters and duration metrics for outbound HTTP |
 
 ### Health checks
 
-Implement the `HealthCheck` interface and register checks by priority level (`DEFAULT`, `HIGH`, `MEDIUM`, `LOW`):
+`HealthcheckHandler` aggregates registered `HealthCheck` implementations by priority level (`DEFAULT`, `HIGH`, `MEDIUM`, `LOW`). Each check returns an `ApiObject` report. The handler serves plain-text or an HTML dashboard at `{contextPath}/healthcheck`.
 
-```java
-ApiRouterProcessor.builder(routing, "/api")
-    .healthCheck("My Service", "v1.2.0")
-    .registerHealthCheck(HealthcheckHandler.LEVEL_DEFAULT, () -> {
-        ApiObject result = new ApiObject();
-        result.setString(HealthcheckHandler.FIELD_PROGRAM, "Database");
-        result.setString(HealthcheckHandler.FIELD_PRIORITY, "DEFAULT");
-        result.setBoolean(HealthcheckHandler.FIELD_HEALTHCHECK, db.isConnected());
-        result.setString(HealthcheckHandler.FIELD_STATUS, db.isConnected() ? "OK" : "DOWN");
-        return result;
-    })
-    .process(log);
+### API documentation
+
+`ApiRapiDocHandler` serves an interactive RapiDoc UI at `{contextPath}/api` from a bundled OpenAPI YAML specification.
+
+### Error handling
+
+`ApiRouterProcessor.process()` registers centralized handlers for `HttpException` and `ApiException`, returning structured `ApiObject` error payloads with configurable field names for code and message.
+
+## Request Pipeline
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant XFlowId as XFlowIdFilter
+    participant Prom as HelidonPrometheusFilter
+    participant Access as HelidonSlf4jAccessLogFilter
+    participant Handler as Route handler
+
+    Client->>XFlowId: HTTP request
+    XFlowId->>Prom: Request + MDC flow ID
+    Prom->>Access: Timed request
+    Access->>Handler: Logged request
+    Handler-->>Access: Response
+    Access-->>Prom: Response + duration
+    Prom-->>XFlowId: Metrics recorded
+    XFlowId-->>Client: Response + X-Flow-Id header
 ```
 
-Endpoints:
+Built-in operational routes (health, metrics, RapiDoc) are registered alongside application handlers through the same router builder.
 
-| URL | Response |
-|-----|----------|
-| `/healthcheck` | `Ok` or `Fail` (503 on failure) |
-| `/healthcheck?warn` | Checks `DEFAULT` and `HIGH` priority levels |
-| `/healthcheck?details` | HTML status page |
+## External Dependencies
 
-## Project structure
+Beyond Helidon 4.5, the common module integrates with:
+
+- **Progbits ApiObject** — core data model (via media modules and `ApiTransforms_jre21`)
+- **Progbits ConfigProvider** — configuration loading alongside Helidon YAML config
+- **Prometheus metrics** — JVM instrumentation and text exposition
+- **SLF4J** — logging API (provided scope; consumer supplies binding)
+- **TestNG** — unit tests in the common module
+
+Artifacts are published to and resolved from the Progbits internal repository:
+
+```
+https://archiva.progbits.com/coffer/repository/internal/
+```
+
+## Typical Usage Pattern
+
+1. Add `ApiModelsHelidonCommon` as a Maven dependency (transitively pulls JSON and YAML media support).
+2. Use `WebServerProcessor.returnWebServer(...)` to obtain a configured server builder.
+3. Chain `ApiRouterProcessor.builder(router, "/api")` to enable tracing, metrics, health checks, and RapiDoc.
+4. Register application routes on the same router.
+5. Use `WebClientUtil` for typed downstream HTTP calls that return `ApiObject` instances.
+
+## Source Layout
 
 ```
 ApiHelidonParent/
-├── pom.xml                          # Parent POM
-├── ApiModelsHelidonMediaJson/       # JSON media support
-├── ApiModelsHelidonMediaYaml/       # YAML media support
-└── ApiModelsHelidonCommon/          # Server, client, filters, handlers
-    └── src/main/resources/
-        ├── healthcheck.html         # Health check detail page template
-        └── rapidoc.html             # RapiDoc UI template
+├── pom.xml                              # Parent POM (modules only)
+├── ApiModelsHelidonMediaJson/           # JSON MediaSupport for ApiObject
+├── ApiModelsHelidonMediaYaml/           # YAML MediaSupport for ApiObject
+└── ApiModelsHelidonCommon/              # Server, filters, handlers, web client
+    └── src/main/
+        ├── java/com/progbits/helidon/
+        │   ├── filters/                 # XFlowId, access log, Prometheus
+        │   ├── handlers/                # Health, metrics, RapiDoc
+        │   ├── utils/                   # WebServerProcessor, ApiRouterProcessor
+        │   └── webclient/               # WebClientUtil, ProcessResponse
+        └── resources/
+            ├── healthcheck.html
+            └── rapidoc.html
 ```
 
-## License
+## Build and Test
 
-Proprietary — Progbits internal library.
+```bash
+# Build all modules and install locally
+mvn clean install
+
+# Run tests for the common module only
+mvn test -pl ApiModelsHelidonCommon
+```
+
+## Summary
+
+ApiHelidonParent is an internal Progbits framework layer on top of Helidon 4. It turns `ApiObject`-centric services into Helidon-native applications with minimal boilerplate: media handling, operational endpoints, and observability are configuration choices on a fluent builder rather than copy-pasted infrastructure code across microservices.
+
+For usage examples and dependency snippets, see [README.md](README.md).
