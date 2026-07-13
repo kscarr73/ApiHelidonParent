@@ -16,8 +16,6 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.InflaterInputStream;
 
 /**
  *
@@ -45,27 +43,7 @@ public class ProcessResponse {
                 if (resp instanceof Http2ClientResponse) {
                     inputStream = new BufferedReader(new InputStreamReader(resp.inputStream()));
                 } else if (resp instanceof Http1ClientResponse) {
-                    Optional<String> contentEncoding = resp.headers().first(HeaderNames.CONTENT_ENCODING);
-
-                    if (contentEncoding.isPresent()) {
-                        if ("gzip".equals(contentEncoding.get())) {
-                            if (resp.inputStream() instanceof GZIPInputStream) {
-                                inputStream = new BufferedReader(new InputStreamReader(resp.inputStream()));
-                            } else {
-                                inputStream = new BufferedReader(new InputStreamReader(new GZIPInputStream(resp.inputStream())));
-                            }
-                        } else if ("deflate".equals(contentEncoding.get())) {
-                            if (resp.inputStream() instanceof InflaterInputStream) {
-                                inputStream = new BufferedReader(new InputStreamReader(resp.inputStream()));
-                            } else {
-                                inputStream = new BufferedReader(new InputStreamReader(new InflaterInputStream(resp.inputStream())));
-                            }
-                        } else {
-                            inputStream = new BufferedReader(new InputStreamReader(resp.inputStream()));
-                        }
-                    } else {
-                        inputStream = new BufferedReader(new InputStreamReader(resp.inputStream()));
-                    }
+                    inputStream = new BufferedReader(new InputStreamReader(resp.inputStream()));
                 }
 
                 // Process Payload
@@ -78,8 +56,6 @@ public class ProcessResponse {
                 } else {
                     processAsString(inputStream, respObj);
                 }
-            } catch (IOException io) {
-                // Nothing really to log here
             } finally {
                 if (inputStream != null) {
                     try {
