@@ -148,13 +148,21 @@ public class WebClientUtil {
      * @throws ApiException Thrown if Call is not Successful (2xx)
      */
     public static ApiObject makeHttpCall(WebClient client, String url, String method, String authorization, String errorField, ApiObject props, ApiObject payload) throws ApiException {
-        ClientResponseTyped<ApiObject> resp = makeHttpCallWithResp(client, url, method, authorization, props, payload);
+        ClientResponseTyped<ApiObject> resp = null;
 
-        if (resp.status().family() == Status.Family.SUCCESSFUL) {
-            return resp.entity();
-        } else {
-            throw new ApiException(resp.status().code(), resp.entity().getString(errorField));
-        }
+        try {
+            resp = makeHttpCallWithResp(client, url, method, authorization, props, payload);
+
+            if (resp.status().family() == Status.Family.SUCCESSFUL) {
+                return resp.entity();
+            } else {
+                throw new ApiException(resp.status().code(), resp.entity().getString(errorField));
+            }
+        } finally {
+            if (resp != null) {
+                resp.close();
+            }
+        } 
     }
     
     /**
@@ -180,15 +188,15 @@ public class WebClientUtil {
      * @throws ApiException 
      */
     public static ApiObject callHttp(WebClient client, String url, String method, String authorization, ApiObject props, ApiObject payload) throws ApiException {
-        HttpClientResponse resp = makeHttpCall(client, url, method, authorization, props, payload, false);
-        
-        return ProcessResponse.processResponse(resp);
+        try (HttpClientResponse resp = makeHttpCall(client, url, method, authorization, props, payload, false)) {
+            return ProcessResponse.processResponse(resp);
+        }
     }
     
     public static ApiObject callHttp(WebClient client, boolean forceHttp1, String url, String method, String authorization, ApiObject props, ApiObject payload) throws ApiException {
-        HttpClientResponse resp = makeHttpCall(client, url, method, authorization, props, payload, forceHttp1);
-        
-        return ProcessResponse.processResponse(resp);
+        try (HttpClientResponse resp = makeHttpCall(client, url, method, authorization, props, payload, forceHttp1)) {
+            return ProcessResponse.processResponse(resp);
+        }
     }
 
     public static ClientResponseTyped<ApiObject> makeHttpCallWithResp(WebClient client, String url, String method, String authorization, ApiObject props, ApiObject payload) {
