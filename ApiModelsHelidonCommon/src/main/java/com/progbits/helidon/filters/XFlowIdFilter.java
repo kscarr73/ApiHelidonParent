@@ -41,16 +41,20 @@ public class XFlowIdFilter implements Filter {
      */
     @Override
     public void filter(FilterChain fc, RoutingRequest req, RoutingResponse resp) {
+        String xFlowId;
+
         if (req.headers().contains(XFLOWID)) {
-            resp.header(XFLOWID, req.headers().value(XFLOWID).get());
-            
-            MDC.put("flowid", req.headers().value(XFLOWID).get());
+            xFlowId = req.headers().value(XFLOWID).get();
+
+            if (xFlowId.isBlank()) {
+                xFlowId = xflowPrefix + UUID.randomUUID().toString();
+            }
         } else {
-            String newFlowId = xflowPrefix + UUID.randomUUID().toString();
-            resp.header(XFLOWID, newFlowId);
-            
-            MDC.put("flowid", newFlowId);
+            xFlowId = xflowPrefix + UUID.randomUUID().toString();
         }
+
+        resp.header(XFLOWID, xFlowId);
+        MDC.put("flowid", xFlowId);
         
         fc.proceed();
     }
