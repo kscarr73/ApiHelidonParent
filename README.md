@@ -10,7 +10,7 @@ Rather than wiring Helidon media providers, filters, and operational endpoints b
 |----------|-------|
 | Version | 1.3.0 |
 | Java | 21 |
-| Helidon | 4.5.0 |
+| Helidon | 4.5.1 |
 | Packaging | Maven multi-module (`pom`) |
 | License | MIT |
 
