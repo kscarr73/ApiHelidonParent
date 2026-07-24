@@ -129,12 +129,23 @@ public class HelidonSlf4jAccessLogFilter implements Filter {
                     .addKeyValue("timestamp", startTime)
                     .addKeyValue("method", req.prologue().method().toString())
                     .addKeyValue("path", req.path().rawPathNoParams())
-                    .addKeyValue("clientip", req.remotePeer().address().toString())
-                    .addKeyValue("reqhost", req.localPeer().host())
                     .addKeyValue("reqproto", req.requestedUri().scheme())
                     .addKeyValue("request", String.format("%s %s", req.prologue().method().toString(),
-                        req.requestedUri().path().toString()))
-                    .addKeyValue("sourceip", req.localPeer().address().toString());
+                        req.requestedUri().path().toString()));
+
+                if (req.remotePeer() != null && req.remotePeer().address() != null) {
+                    builder.addKeyValue("clientip", req.remotePeer().address().toString());
+                } else {
+                    builder.addKeyValue("clientip", "NotAvailable");
+                }
+
+                if (req.localPeer() != null && req.localPeer().address() != null) {
+                    builder.addKeyValue("reqhost", req.localPeer().host());
+                    builder.addKeyValue("sourceip", req.localPeer().address().toString());
+                } else {
+                    builder.addKeyValue("reqhost", "NotAvailable");
+                    builder.addKeyValue("sourceip", "NotAvailable");
+                }
 
                 if (req.headers().size() > 0) {
                     req.headers().forEach((h) -> {
